@@ -1,0 +1,11 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch
+sentence-transformers
+streamlit
+plotly
+pandas
+numpy
+scikit-learn
+xgboost
+joblib
+rank_bm25

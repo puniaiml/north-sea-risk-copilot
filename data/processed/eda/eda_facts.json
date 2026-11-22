@@ -1,0 +1,26 @@
+{
+  "rows": 481152,
+  "sites": [
+    "BrentArea",
+    "DoggerBankA",
+    "EOWDC",
+    "FortiesArea",
+    "GreaterGabbard",
+    "HornseaOne",
+    "MorayEast",
+    "Teesside"
+  ],
+  "first_hour": "2020-01-01 00:00:00",
+  "last_hour": "2026-11-10 23:00:00",
+  "thresholds": {
+    "wind_col": "wind_speed_100m",
+    "wind_warn": 12.9,
+    "wind_crit": 15.4,
+    "wave_warn": 1.5,
+    "wave_crit": 2.0
+  },
+  "chunks": 19643,
+  "documents": 534,
+  "core_documents": 93,
+  "core_chunks": 1660
+}

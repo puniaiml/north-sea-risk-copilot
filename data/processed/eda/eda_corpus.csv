@@ -1,0 +1,7 @@
+source,doc_type,core,documents,chunks
+HSE,hse_bulletin,False,37,232
+HSE,hse_bulletin,True,30,173
+HSE,hse_notice,True,7,37
+HSE,hse_offshore_page,True,18,261
+MAIB,maib_report,False,404,17751
+MAIB,maib_report,True,38,1189

@@ -52,3 +52,13 @@ def test_extended_run_writes_to_custom_dir(tmp_path):
     res = tm.run(synthetic(), "cited", quick=True, out_dir=out, feature_set="extended")
     assert res["feature_set"] == "extended" and len(res["features"]) > 28
     assert (out / "best_model.joblib").exists() and (out / "test_sample.csv").exists()
+
+
+def test_critical_weight_is_recorded_and_changes_model(tmp_path):
+    from test_labels import synthetic
+    df = synthetic()
+    a = tm.run(df, "cited", quick=True, out_dir=tmp_path / "a", feature_set="extended")
+    b = tm.run(df, "cited", quick=True, out_dir=tmp_path / "b", feature_set="extended", critical_weight=1.5)
+    assert a["critical_weight"] == 1.0 and b["critical_weight"] == 1.5
+    assert a["models"]["XGBoost"]["test_macro_f1"] != b["models"]["XGBoost"]["test_macro_f1"] or \
+        a["models"]["XGBoost"]["cm_test"] != b["models"]["XGBoost"]["cm_test"]

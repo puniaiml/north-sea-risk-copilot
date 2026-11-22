@@ -22,6 +22,7 @@ Usage:
     python src/train_models.py --quick
     python src/train_models.py --features extended --out-dir models/extended
     python src/train_models.py --thresholds guide_default --out-dir models/sensitivity_guide_default
+    python src/train_models.py --features extended --critical-weight 1.5
 """
 
 import argparse
@@ -150,10 +151,11 @@ def error_analysis(te, pred):
 NAMES = {0: "Normal", 1: "Warning", 2: "Critical"}
 
 
-def run(df, set_name=None, quick=False, out_dir=None, feature_set="base"):
+def run(df, set_name=None, quick=False, out_dir=None, feature_set="base", critical_weight=1.0):
     """Run the full comparison on a collected weather DataFrame and write all artefacts. Returns results.
 
     With a custom out_dir the artefacts and the test sample go there and the shared copies are left untouched.
+    critical_weight multiplies the balanced sample weight of the Critical class for every model.
     """
     default_dir = cfg.MODELS_DIR
     out_dir = Path(out_dir) if out_dir else default_dir
@@ -165,13 +167,14 @@ def run(df, set_name=None, quick=False, out_dir=None, feature_set="base"):
     tr, va, te = labels.time_split(d)
     if quick:
         tr = tr.iloc[::4]
-    print(f"Thresholds: {set_name} {th}; feature set: {feature_set}")
+    print(f"Thresholds: {set_name} {th}; feature set: {feature_set}; Critical weight x{critical_weight}")
     print(f"Rows: train {len(tr)}, validation {len(va)}, test {len(te)}; features {len(feats)}")
 
     sc = StandardScaler().fit(tr[feats])
     X, Xv, Xt = (sc.transform(f[feats]) for f in (tr, va, te))
     y, yv, yt = tr["y"].to_numpy(), va["y"].to_numpy(), te["y"].to_numpy()
     w = compute_sample_weight("balanced", y)
+    w[y == 2] *= critical_weight
 
     fitted, params, trials = {}, {}, {}
     for name, (factory, grid) in grids(quick).items():
@@ -211,7 +214,7 @@ def run(df, set_name=None, quick=False, out_dir=None, feature_set="base"):
 
     share = lambda f: {NAMES[k]: round(float(v), 4) for k, v in f["y"].value_counts(normalize=True).sort_index().items()}
     results = dict(
-        threshold_set=set_name, feature_set=feature_set, thresholds=th, horizon_hours=cfg.HORIZON, seed=cfg.SEED, quick=quick,
+        threshold_set=set_name, feature_set=feature_set, critical_weight=critical_weight, thresholds=th, horizon_hours=cfg.HORIZON, seed=cfg.SEED, quick=quick,
         versions=dict(sklearn=sklearn.__version__, xgboost=xgboost.__version__, pandas=pd.__version__),
         split=dict(train=len(tr), validation=len(va), test=len(te), train_class_share=share(tr),
                    validation_class_share=share(va), test_class_share=share(te)),
@@ -249,8 +252,9 @@ if __name__ == "__main__":
     p.add_argument("--quick", action="store_true", help="small grids and fewer rows, for a smoke test")
     p.add_argument("--out-dir", help="write artefacts here instead of models/, for sensitivity or feature-set runs")
     p.add_argument("--features", default="base", choices=["base", "extended"], help="feature set")
+    p.add_argument("--critical-weight", type=float, default=1.0, help="extra multiplier on the Critical class sample weight")
     a = p.parse_args()
     if not cfg.CSV_PATH.exists():
         raise SystemExit(f"{cfg.CSV_PATH} not found. Run collect_weather.py first.")
     frame = pd.read_csv(cfg.CSV_PATH, parse_dates=["time"])
-    print_table(run(frame, a.thresholds, a.quick, a.out_dir, a.features))
+    print_table(run(frame, a.thresholds, a.quick, a.out_dir, a.features, a.critical_weight))

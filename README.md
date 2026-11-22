@@ -27,7 +27,7 @@ pip install -r requirements-dev.txt
 7. `python src/build_chunks.py` cleans the documents and writes `data/processed/chunks.jsonl`: 200-word chunks with a 40-word overlap, a `core` flag for offshore-operations documents, and the source URL on every chunk.
 
 8. `python src/check_labels.py` prints class shares for each threshold set in `src/config.py` (training years, by year, by site, Critical hours in the test year).
-9. `python src/train_models.py` builds labels and features, tunes Logistic Regression, Random Forest and XGBoost on the validation year, applies the selection rule, scores the 2026 test year once, and writes `models/best_model.joblib`, `scaler.joblib`, `features.joblib`, `feature_medians.joblib`, `results.json` and `data/processed/test_sample.csv`. Use `--thresholds guide_default --out-dir models/sensitivity_guide_default` for the sensitivity run, `--features extended --out-dir models/extended` for the extended feature set (longer history, recent maxima, direction and steepness features, site position and summaries of the other sites), and `--quick` for a smoke test. A run with `--out-dir` leaves the main artefacts untouched and writes its own `test_sample.csv` there.
+9. `python src/train_models.py` builds labels and features, tunes Logistic Regression, Random Forest and XGBoost on the validation year, applies the selection rule, scores the 2026 test year once, and writes `models/best_model.joblib`, `scaler.joblib`, `features.joblib`, `feature_medians.joblib`, `results.json` and `data/processed/test_sample.csv`. Use `--thresholds guide_default --out-dir models/sensitivity_guide_default` for the sensitivity run, `--features extended --out-dir models/extended` for the extended feature set (longer history, recent maxima, direction and steepness features, site position and summaries of the other sites), `--critical-weight 1.5` to raise the Critical class sample weight, and `--quick` for a smoke test. A run with `--out-dir` leaves the main artefacts untouched and writes its own `test_sample.csv` there.
 
 10. `python src/build_embeddings.py` embeds every chunk with MiniLM and saves `data/processed/embeddings.npy` (float16). It takes several minutes on a laptop CPU.
 11. Retrieval benchmark. Each member writes 10 queries into `data/benchmark/queries.csv` (columns `qid,author,query`, see `queries_template.csv`). Use different wording and synonyms, because that is where BM25 and dense search differ. Then:
@@ -37,7 +37,12 @@ pip install -r requirements-dev.txt
 
 12. `python src/bootstrap_ci.py --split val base=models extended=models/extended` compares models with day-block bootstrap confidence intervals and paired differences. Use `--split val` to choose between models and `--split test` for the final report. A spec can pick a candidate, for example `rf=models:RandomForest`.
 
-More steps are added as the project progresses.
+13. `python src/build_eda_summary.py` condenses the weather file into small tables under `data/processed/eda` for the app's data tab. Commit that folder.
+14. `streamlit run app/streamlit_app.py` starts the app. Tab 1 replays held-out 2026 hours with a forecast, drivers and cited passages from the core offshore corpus. Tab 2 shows the data summaries. Tab 3 shows the model and retrieval evidence. The retrieval method is the one with the best MRR in `data/benchmark/retrieval_results.json`, or hybrid when that file is missing. Without the embedding model it falls back to keyword search.
+
+## Deploy on Streamlit Cloud
+
+Push the repo to GitHub, create an app at https://share.streamlit.io, choose the repo, branch `main` and main file `app/streamlit_app.py`, and set Python 3.11 under advanced settings. `requirements.txt` holds only what the app needs (CPU torch keeps the install small). The first start downloads the MiniLM model, which takes a minute. The app needs these committed files: `models/best_model.joblib`, `scaler.joblib`, `features.joblib`, `feature_medians.joblib`, `results.json`, `data/processed/chunks.jsonl`, `embeddings.npy`, `test_sample.csv` and `data/processed/eda/`.
 
 ## Notes
 
