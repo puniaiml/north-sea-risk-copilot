@@ -71,17 +71,20 @@ def load_sample():
 
 @st.cache_resource(show_spinner="Loading safety corpus")
 def load_search():
-    """Core-only retrievers, the methods they support and the method chosen from the benchmark."""
+    """Core-only retrievers, the methods they support and the method chosen from the benchmark.
+
+    The embedding model is loaded only when the chosen method needs it.
+    """
     chunks = retrieval.load_chunks()
+    method = copilot.best_method()
     embeddings, encode = None, None
-    if cfg.EMBEDDINGS_PATH.exists():
+    if method != "bm25" and cfg.EMBEDDINGS_PATH.exists():
         try:
             encode = retrieval.load_encoder()
             embeddings = np.load(cfg.EMBEDDINGS_PATH)
         except Exception:
             encode, embeddings = None, None
     R, available = copilot.core_retriever(chunks, embeddings, encode)
-    method = copilot.best_method()
     return R, (method if method in available else available[-1]), available
 
 
@@ -153,11 +156,11 @@ def live_tab():
     R, method, available = load_search()
     query = copilot.build_query(pred, list(drivers.index), note)
     st.caption(f"Search text: {query}")
-    st.caption(f"Retrieval method: {method}" + ("" if len(available) > 1 else " (keyword only, embedding model not available here)"))
+    st.caption(f"Retrieval method: {method}" + ("" if len(available) > 1 else " (keyword search)"))
     passages = R.top_chunks(method, query, k=3, core_only=False)
     for i, c in enumerate(passages, 1):
         with st.expander(f"{i}. {c.get('title', c['doc_id'])}", expanded=i == 1):
-            text = c["text"]
+            text = c["text"].replace("Â", "")
             st.write(text if len(text) < 900 else text[:900].rsplit(" ", 1)[0] + " ...")
             st.markdown(f"Source: [{c.get('source', 'link')}]({c['url']})")
     st.warning(DISCLAIMER)

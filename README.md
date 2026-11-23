@@ -32,7 +32,7 @@ pip install -r requirements-dev.txt
 10. `python src/build_embeddings.py` embeds every chunk with MiniLM and saves `data/processed/embeddings.npy` (float16). It takes several minutes on a laptop CPU.
 11. Retrieval benchmark. Each member writes 10 queries into `data/benchmark/queries.csv` (columns `qid,author,query`, see `queries_template.csv`). Use different wording and synonyms, because that is where BM25 and dense search differ. Then:
     - `python src/benchmark_retrieval.py pool --core-only` writes `data/benchmark/pool.csv`, the top 5 documents from each of BM25, dense and hybrid search for every query.
-    - Open `pool.csv`, read each document through its `url` and fill the `relevant` column with 1 (the document answers the query) or 0. Agree the rule in the group first and mark independently when possible.
+    - Mark the pool with `python src/mark_pool.py mark --rater yourname`. It shows each candidate in random order without the method, accepts 1 or 0, opens the page with `o`, saves after every mark and resumes where you stopped. Agree the rule in the group first (it is in the script's docstring) and mark independently. Then `python src/mark_pool.py merge nameA nameB` writes the agreed marks into `pool.csv`, lists disagreements in `data/benchmark/disagreements.csv` and prints agreement and Cohen's kappa. Resolve the blanks together before evaluating.
     - `python src/benchmark_retrieval.py evaluate --core-only` prints hit@3, recall@3, MRR and mean query time per method and writes `data/benchmark/retrieval_results.json`. Use `--core-only` in both steps so the benchmark searches the same offshore-focused corpus as the app. Running both without the flag gives the full-corpus comparison.
 
 12. `python src/bootstrap_ci.py --split val base=models extended=models/extended` compares models with day-block bootstrap confidence intervals and paired differences. Use `--split val` to choose between models and `--split test` for the final report. A spec can pick a candidate, for example `rf=models:RandomForest`.
@@ -42,7 +42,7 @@ pip install -r requirements-dev.txt
 
 ## Deploy on Streamlit Cloud
 
-Push the repo to GitHub, create an app at https://share.streamlit.io, choose the repo, branch `main` and main file `app/streamlit_app.py`, and set Python 3.11 under advanced settings. `requirements.txt` holds only what the app needs (CPU torch keeps the install small). The first start downloads the MiniLM model, which takes a minute. The app needs these committed files: `models/best_model.joblib`, `scaler.joblib`, `features.joblib`, `feature_medians.joblib`, `results.json`, `data/processed/chunks.jsonl`, `embeddings.npy`, `test_sample.csv` and `data/processed/eda/`.
+Push the repo to GitHub, create an app at https://share.streamlit.io, choose the repo, branch `main` and main file `app/streamlit_app.py`, and set Python 3.11 under advanced settings. `requirements.txt` holds only what the app needs. The benchmark chose keyword search, so the app does not need torch or the embedding model, which keeps the install small and the start fast. If a later benchmark picks dense or hybrid search, add `--extra-index-url https://download.pytorch.org/whl/cpu`, `torch` and `sentence-transformers` to `requirements.txt`. The app needs these committed files: `models/best_model.joblib`, `scaler.joblib`, `features.joblib`, `feature_medians.joblib`, `results.json`, `data/processed/chunks.jsonl`, `embeddings.npy`, `test_sample.csv` and `data/processed/eda/`.
 
 ## Notes
 

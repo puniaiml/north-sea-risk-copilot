@@ -100,3 +100,21 @@ def test_app_runs_headless(workspace):
     assert any("Search text" in c.value for c in at.caption)
     at.selectbox[1].select("Critical").run()
     assert not at.exception
+
+
+def test_app_with_keyword_method_skips_embedding_model(workspace, monkeypatch):
+    from streamlit.testing.v1 import AppTest
+    import streamlit as st
+    (workspace / "ret.json").write_text(json.dumps({
+        "queries_scored": 5, "methods": {"bm25": dict(hit_at_3=1, recall_at_3=1, mrr=0.9, mean_query_ms=5.0, queries=5),
+                                         "dense": dict(hit_at_3=1, recall_at_3=1, mrr=0.5, mean_query_ms=5.0, queries=5)}}))
+
+    def boom():
+        raise AssertionError("encoder must not load")
+
+    monkeypatch.setattr(rt, "load_encoder", boom)
+    st.cache_resource.clear()
+    st.cache_data.clear()
+    at = AppTest.from_file(str(ROOT / "app" / "streamlit_app.py"), default_timeout=120).run()
+    assert not at.exception, [e.value for e in at.exception]
+    assert any("Retrieval method: bm25" in c.value for c in at.caption)
