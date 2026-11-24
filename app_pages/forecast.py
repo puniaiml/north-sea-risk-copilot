@@ -42,14 +42,14 @@ top_left, map_right = st.columns([3, 2], gap="large")
 with top_left:
     with st.container(horizontal=True):
         with st.container(border=True):
-            st.markdown("**Copilot Forecast**")
+            st.markdown("**Copilot forecast**")
             st.badge(core.CLASS_NAMES[pred], icon=ICON[pred], color=BADGE[pred])
             st.caption(f"{probs[pred]:.0%} probability · {art.results['winner']}")
         with st.container(border=True):
             p = int(row["y_persist"])
-            st.markdown("**Persistence baseline**")
+            st.markdown("**If nothing changes**")
             st.badge(core.CLASS_NAMES[p], icon=ICON[p], color=BADGE[p])
-            st.caption(f"Assumes the next {horizon} hours look like now")
+            st.caption(f"Persistence baseline: current level carried forward {horizon} hours")
         with st.container(border=True):
             y = int(row["y"])
             st.markdown("**What actually happened**")
