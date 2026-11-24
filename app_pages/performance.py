@@ -29,7 +29,7 @@ with st.container(horizontal=True):
                    + ", ".join(f"{v:,} as {k}" for k, v in res["errors"]["missed_predicted_as"].items())
                    + ". Hours are counted at each of the eight sites and overlap, so one storm can count many times.")
     st.metric("Prediction time", f"{win['latency_ms']:.1f} ms", border=True,
-              help=f"One row on a laptop CPU. Model size {win['size_mb']:.1f} MB.")
+              help=f"Average time to forecast one location at one hour, on a single CPU thread. Model size {win['size_mb']:.1f} MB.")
 
 st.subheader("All models")
 table = pd.DataFrame([
