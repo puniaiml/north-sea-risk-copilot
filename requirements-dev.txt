@@ -1,13 +1,5 @@
-pandas
-numpy
-scikit-learn
-xgboost
-joblib
+-r requirements.txt
 requests
 beautifulsoup4
-rank_bm25
-sentence-transformers
-streamlit
-plotly
 pdfplumber
 pytest
