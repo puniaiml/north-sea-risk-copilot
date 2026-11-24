@@ -20,9 +20,14 @@ with st.container(horizontal=True):
               delta=f"{win['test_macro_f1'] - pers['test_macro_f1']:+.3f} vs persistence", border=True)
     st.metric(f"{winner} Critical recall", f"{win['test_crit_recall']:.1%}",
               delta=f"{win['test_crit_recall'] - pers['test_crit_recall']:+.1%} vs persistence", border=True)
-    st.metric("Missed Critical hours", f"{res['errors']['missed_critical']:,}", border=True,
-              help="Critical hours the model forecast as a lower class: "
-                   + ", ".join(f"{v:,} as {k}" for k, v in res["errors"]["missed_predicted_as"].items()))
+    missed = res["errors"]["missed_critical"]
+    critical = sum(win["cm_test"][2])  # bottom row of the confusion matrix: actually Critical
+    fewer = missed - sum(pers["cm_test"][2][:2])
+    st.metric("Missed Critical hours", f"{missed:,} :small[:gray[/ {critical:,}]]",
+              delta=f"{fewer:+,} vs persistence", delta_color="inverse", border=True,
+              help=f"Out of {critical:,} hours that were actually Critical. Forecast lower: "
+                   + ", ".join(f"{v:,} as {k}" for k, v in res["errors"]["missed_predicted_as"].items())
+                   + ". Hours are counted at each of the eight sites and overlap, so one storm can count many times.")
     st.metric("Prediction time", f"{win['latency_ms']:.1f} ms", border=True,
               help=f"One row on a laptop CPU. Model size {win['size_mb']:.1f} MB.")
 
