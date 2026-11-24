@@ -15,8 +15,6 @@ import app_data  # noqa: E402
 
 st.set_page_config(page_title="North Sea Risk Advisory Copilot", page_icon=":material/waves:", layout="wide")
 
-HOUR_FILTERS = ["All hours", "Critical outcome", "Model wrong"]
-
 page = st.navigation(
     [
         st.Page("app_pages/forecast.py", title="Risk forecast", icon=":material/thunderstorm:", default=True,
@@ -42,17 +40,19 @@ with st.sidebar:
     if "site" not in st.session_state:
         st.session_state.site = sites[0]
     st.selectbox("Location", sites, key="site", format_func=core.site_label, persist_state="session")
-    st.segmented_control("Show hours", HOUR_FILTERS, key="hour_filter", default=HOUR_FILTERS[0],
-                         required=True, persist_state="session")
+    site_rows = df[df["site"] == st.session_state.site]
+    masks = core.outcome_masks(site_rows)
+    # Set on every run, or the closed dropdown keeps the previous location's count.
+    st.session_state.hour_filter = st.session_state.get("hour_filter", "All")
+    st.selectbox("Filter hours by outcome", list(masks), key="hour_filter", persist_state="session",
+                 format_func=lambda name: f"{name} ({int(masks[name].sum())})",
+                 help="Uses actual outcomes, for reviewing the model only. Missed Critical: actually Critical, "
+                      "but forecast lower. False alarm: forecast Critical, actually lower.")
 
-    rows = df[df["site"] == st.session_state.site]
-    if st.session_state.hour_filter == "Critical outcome":
-        rows = rows[rows["y"] == 2]
-    elif st.session_state.hour_filter == "Model wrong":
-        rows = rows[rows["pred"] != rows["y"]]
+    rows = site_rows[masks[st.session_state.hour_filter]]
     if rows.empty:
-        st.warning("No hours match this filter at this site. Showing all hours.")
-        rows = df[df["site"] == st.session_state.site]
+        st.warning(f"{core.EMPTY_OUTCOME[st.session_state.hour_filter]} at this location. Showing all hours.")
+        rows = site_rows
 
     options = rows["time"].dt.strftime("%Y-%m-%d %H:%M").tolist()
     if st.session_state.get("time") not in options:
@@ -60,7 +60,7 @@ with st.sidebar:
     st.selectbox("Hour (2026 test year)", options, key="time",
                  format_func=core.time_label, persist_state="session",
                  help="Defaults to the latest hour in the sample for this site.")
-    st.caption(f"{len(options)} of {int((df['site'] == st.session_state.site).sum())} sampled hours. "
+    st.caption(f"{len(options)} of {len(site_rows)} sampled hours. "
                "The model never saw 2026 during training or selection.")
 
 page.run()

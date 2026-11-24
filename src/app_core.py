@@ -338,6 +338,17 @@ CLASS_RGB = [[46, 157, 91], [232, 162, 26], [214, 69, 69]]
 NO_DATA_RGB = [150, 150, 150]
 
 
+EMPTY_OUTCOME = {"All": "No hours", "Critical": "No Critical hours", "Missed Critical": "No missed Critical hours",
+                 "False alarm": "No false alarms"}
+
+
+def outcome_masks(df):
+    """Row masks for the hour filter, by comparing the forecast (pred) with the true outcome (y)."""
+    critical, called = df["y"] == 2, df["pred"] == 2
+    return {"All": critical | True, "Critical": critical, "Missed Critical": critical & ~called,
+            "False alarm": called & ~critical}
+
+
 def sites_frame(selected=None, hour_rows=None, dark=False):
     """Site table for the map, selected site last so it is drawn on top.
 

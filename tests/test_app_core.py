@@ -137,6 +137,13 @@ def test_every_site_has_a_row_at_every_sampled_hour(sample):
     assert (sample.groupby("time")["site"].nunique() == len(cfg.SITES)).all()
 
 
+def test_outcome_masks():
+    df = pd.DataFrame(dict(y=[2, 2, 1, 0, 1], pred=[2, 1, 2, 2, 1]))
+    got = {k: list(df.index[m]) for k, m in core.outcome_masks(df).items()}
+    assert got == {"All": [0, 1, 2, 3, 4], "Critical": [0, 1], "Missed Critical": [1], "False alarm": [2, 3]}
+    assert set(core.EMPTY_OUTCOME) == set(got)
+
+
 TERMS = {"transfer", "swell", "vessel"}
 
 
