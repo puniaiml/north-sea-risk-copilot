@@ -70,6 +70,33 @@ HAZARD_QUERIES = {
 }
 
 
+def load_suggestions(path=cfg.SUGGESTIONS_PATH):
+    """Example searches as {hazard: [query, ...]} in file order. Empty if the file is missing or unreadable.
+
+    The hazard column holds wave, wind or general. Blank rows are skipped.
+    """
+    try:
+        df = pd.read_csv(path, encoding="utf-8-sig", dtype=str)[["hazard", "query"]].dropna()
+    except (OSError, ValueError, KeyError):
+        return {}
+    df = df.apply(lambda col: col.str.strip())
+    df["hazard"] = df["hazard"].str.lower()
+    return {h: list(dict.fromkeys(q for q in g["query"] if q)) for h, g in df.groupby("hazard")}
+
+
+def suggestions(table, cls, hazard, both=False):
+    """Up to four example searches: general ones when the forecast is Normal, else for the main hazard.
+
+    With both hazards present, two from each set, the main hazard first.
+    """
+    if cls == 0:
+        return table.get("general", [])[:4]
+    if both:
+        other = "wind" if hazard == "wave" else "wave"
+        return table.get(hazard, [])[:2] + table.get(other, [])[:2]
+    return table.get(hazard, [])[:4]
+
+
 @dataclass
 class Artifacts:
     """Everything train_models.py saves for one model directory."""
@@ -180,6 +207,11 @@ def dominant_hazard(drive, row, th):
         return max(score, key=score.get)
     c = conditions(row, th)
     return "wave" if c["wave"]["value"] / c["wave"]["crit"] >= c["wind"]["value"] / c["wind"]["crit"] else "wind"
+
+
+def both_hazards(row, th):
+    """True when wind and waves are both at Warning level or above at the forecast hour."""
+    return all(c["level"] > 0 for c in conditions(row, th).values())
 
 
 def hazard_query(cls, hazard):

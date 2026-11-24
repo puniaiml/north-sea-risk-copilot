@@ -106,6 +106,8 @@ MAX_SIZE_MB = 50
 MAX_LATENCY_MS = 50
 RECALL_TOLERANCE = 0.03
 
+# Searches suggested on the Safety guidance page. Kept apart from the benchmark data.
+SUGGESTIONS_PATH = ROOT / "data" / "safety_guidance_suggestions.csv"
 BENCH_DIR = ROOT / "data" / "benchmark"
 QUERIES_PATH = BENCH_DIR / "queries.csv"
 POOL_PATH = BENCH_DIR / "pool.csv"

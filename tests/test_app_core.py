@@ -86,6 +86,49 @@ def test_hazard_query():
     assert "swell" in core.hazard_query(2, "wave")
 
 
+SUGGESTED = {"wave": ["a1", "a2", "a3", "a4", "a5"], "wind": ["b1", "b2", "b3"], "general": ["c1"]}
+
+
+def test_suggestions_file_is_valid_and_differs_from_the_benchmark():
+    table = core.load_suggestions()
+    assert set(table) == {"wave", "wind", "general"}
+    assert all(len(group) >= 4 for group in table.values())
+    every = [q.lower() for group in table.values() for q in group]
+    assert len(set(every)) == len(every)
+    assert not set(every) & {q.lower() for q in pd.read_csv(cfg.QUERIES_PATH)["query"]}
+
+
+def test_load_suggestions_tolerates_bad_files(tmp_path):
+    p = tmp_path / "s.csv"
+    assert core.load_suggestions(p) == {}
+    for lines in ([""], ["topic,text", "wave,x"], ["hazard,query"]):
+        p.write_text("\n".join(lines))
+        assert core.load_suggestions(p) == {}
+    p.write_bytes(b"hazard,query\nwave,caf\xe9\n")  # not UTF-8
+    assert core.load_suggestions(p) == {}
+
+
+def test_load_suggestions_cleans_rows(tmp_path):
+    p = tmp_path / "s.csv"
+    p.write_text("\n".join(["hazard,query", " Wave ,one ", "wave,", "wave,one", 'wind,"two, three"']), encoding="utf-8-sig")
+    assert core.load_suggestions(p) == {"wave": ["one"], "wind": ["two, three"]}
+
+
+def test_suggestions_follow_the_forecast():
+    s = core.suggestions
+    assert s(SUGGESTED, 0, "wave", both=True) == ["c1"]
+    assert s(SUGGESTED, 2, "wave") == ["a1", "a2", "a3", "a4"]
+    assert s(SUGGESTED, 1, "wind") == ["b1", "b2", "b3"]
+    assert s(SUGGESTED, 2, "wind", both=True) == ["b1", "b2", "a1", "a2"]
+    assert s({}, 2, "wave", both=True) == []
+
+
+def test_both_hazards_needs_wind_and_waves_at_warning():
+    row = pd.Series({"wind_speed_100m": TH["wind_warn"], "wave_height": TH["wave_warn"]})
+    assert core.both_hazards(row, TH)
+    assert not core.both_hazards(row.replace(TH["wave_warn"], 0.5), TH)
+
+
 def test_sample_has_every_feature(art, sample):
     assert not [f for f in art.features if f not in sample.columns]
     assert {"time", "site", "y", "y_persist"} <= set(sample.columns)

@@ -6,6 +6,13 @@ import retrieval
 
 METHODS = {"hybrid": "Hybrid", "bm25": "BM25 keywords", "dense": "Dense (MiniLM)"}
 
+
+def use_suggestion():
+    """Put the chosen suggestion in the search box."""
+    if st.session_state.suggestion:
+        st.session_state.query = st.session_state.suggestion
+
+
 f = app_data.forecast(st.session_state.site, st.session_state.time)
 pred, hazard = f["pred"], f["hazard"]
 auto = f["query"] or ""
@@ -19,7 +26,7 @@ st.caption(f"{core.site_label(st.session_state.site)} · {core.time_label(st.ses
            f"**{core.CLASS_NAMES[pred]}**" + (f", driven mainly by {'waves' if hazard == 'wave' else 'wind'}" if pred > 0 else ""))
 
 if pred == 0:
-    st.info("The forecast is Normal, so no guidance is suggested. You can still search the corpus below.",
+    st.info("The forecast is Normal, so no guidance is suggested. You can still search the corpus or try a suggestion below.",
             title="No hazard forecast", icon=":material/check_circle:")
 
 with st.container(horizontal=True, vertical_alignment="bottom"):
@@ -31,6 +38,11 @@ with st.container(horizontal=True, vertical_alignment="bottom"):
               help="Search only documents flagged as offshore operations, as in the retrieval benchmark.")
 
 query = (st.session_state.query or "").strip()
+chips = core.suggestions(core.load_suggestions(), pred, hazard, f["both"])
+# Highlight a chip only while its text is the current search.
+st.session_state.suggestion = query if query in chips else None
+if chips:
+    st.pills("Try a related search", chips, key="suggestion", on_change=use_suggestion)
 if not query:
     st.stop()
 

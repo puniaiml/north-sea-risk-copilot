@@ -48,4 +48,5 @@ def forecast(site, time):
     pred = int(row["pred"])
     drive = core.drivers(art, row, pred)
     hazard = core.dominant_hazard(core.drivers(art, row, 2), row, art.thresholds)
-    return dict(row=row, pred=pred, drivers=drive, hazard=hazard, query=core.hazard_query(pred, hazard))
+    return dict(row=row, pred=pred, drivers=drive, hazard=hazard, query=core.hazard_query(pred, hazard),
+                both=core.both_hazards(row, art.thresholds))

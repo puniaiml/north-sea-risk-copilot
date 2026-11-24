@@ -39,7 +39,7 @@ pip install -r requirements-dev.txt
 
 13. `streamlit run app.py` starts the copilot. It replays the 2026 test sample in `data/processed/test_sample.csv` with the deployed model in `models/`, so it needs no network apart from downloading MiniLM from Hugging Face the first time the Safety guidance page opens. Pages:
     - **Risk forecast**: pick a site and hour in the sidebar to see the forecast class and probabilities, the persistence forecast, the true outcome, conditions against the thresholds and the features behind the forecast. The hour filter can show only Critical hours, Critical hours the model missed or false alarms.
-    - **Safety guidance**: the top 3 HSE and MAIB documents for a search built from the forecast hazard, with the best passage and a source link. The search text, method and offshore-only filter can be changed.
+    - **Safety guidance**: the top 3 HSE and MAIB documents for a search built from the forecast hazard, with the best passage and a source link. Suggested searches follow the forecast hazard and come from `data/safety_guidance_suggestions.csv` (columns `hazard,query`, hazard is wave, wind or general). The search text, method and offshore-only filter can be changed.
     - **Model performance**: test scores, confusion matrix, results by month and site, bootstrap intervals, and the retrieval benchmark once `retrieval_results.json` exists.
     - **About**: method, data sources and limitations.
 
