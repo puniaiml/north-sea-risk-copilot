@@ -139,14 +139,15 @@ if boot:
                "from the same weather system stay together. An interval that excludes zero is a reliable "
                "difference.")
 
-st.subheader("Retrieval benchmark")
-ret = app_data.json_file(str(cfg.RETRIEVAL_RESULTS_PATH))
-if ret:
-    st.dataframe(pd.DataFrame(ret["methods"]).T.rename_axis("Method").reset_index(), hide_index=True,
-                 alt="Retrieval scores for BM25, dense and hybrid search")
-    st.caption(f"{ret['queries_scored']} queries scored, {ret['relevant_documents']} relevant documents, "
-               f"offshore documents only: {ret['core_only']}.")
-else:
-    st.info("Run `python src/benchmark_retrieval.py pool --core-only`, mark the pool, then "
-            "`python src/benchmark_retrieval.py evaluate --core-only`. Results will appear here.",
-            title="Not run yet", icon=":material/pending:")
+# st.subheader("Retrieval benchmark")
+# ret = app_data.json_file(str(cfg.RETRIEVAL_RESULTS_PATH))
+# if ret:
+#     st.dataframe(pd.DataFrame(ret["methods"]).T.rename_axis("Method").reset_index(), hide_index=True,
+#                  alt="Retrieval scores for BM25, dense and hybrid search")
+#     st.caption(f"{ret['queries_scored']} queries scored, {ret['relevant_documents']} relevant documents, "
+#                f"offshore documents only: {ret['core_only']}.")
+# else:
+#     st.info("Run `python src/benchmark_retrieval.py pool --core-only`, mark the pool, then "
+#             "`python src/benchmark_retrieval.py evaluate --core-only`. Results will appear here.",
+#             title="Not run yet", icon=":material/pending:")
+
